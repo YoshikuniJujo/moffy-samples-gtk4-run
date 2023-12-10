@@ -5,8 +5,10 @@
 {-# LANGUAGE PatternSynonyms #-}
 {-# OPTIONS_GHC -Wall -fno-warn-tabs #-}
 
-module Control.Moffy.Samples.Followbox.Run.Gtk4 (runFollowbox) where
+module Control.Moffy.Samples.Followbox.Run.Gtk4 (
+	runFollowbox, runFollowbox' ) where
 
+import Control.Arrow
 import Control.Concurrent
 import Control.Moffy
 import Control.Moffy.Samples.Event.CalcTextExtents
@@ -38,6 +40,9 @@ import Control.Moffy.Samples.Event.Area qualified as A
 runFollowbox :: String -> Sig s FollowboxEv T.View () -> IO ()
 runFollowbox brws sig = runFollowbox_ brws Nothing $ viewToView <$%> sig
 
+runFollowbox' :: String -> Sig s FollowboxEv ([(Int, Area)], T.View) () -> IO ()
+runFollowbox' brws sig = runFollowbox_' brws Nothing $ (second viewToView) <$%> sig
+
 runFollowbox_ :: String -> Maybe GithubNameToken -> Sig s FollowboxEv View () -> IO ()
 runFollowbox_ brws tkn sig = do
 	va <- atomically $ newTVar M.empty
@@ -46,12 +51,31 @@ runFollowbox_ brws tkn sig = do
 	_ <- forkIO $ runFollowboxGen cer ceo va brws tkn cv (sig >> emit Stopped)
 	runSingleWin cer ceo cv
 
+runFollowbox_' :: String -> Maybe GithubNameToken -> Sig s FollowboxEv ([(Int, Area)], View) () -> IO ()
+runFollowbox_' brws tkn sig = do
+	va <- atomically $ newTVar M.empty
+	(cer, ceo, cv) <- atomically $
+		(,,) <$> newTChan <*> newTChan <*> newTChan
+	_ <- forkIO $ runFollowboxGen' cer ceo va brws tkn cv (sig >> emit ([], Stopped))
+	runSingleWin cer ceo cv
+
 runFollowboxGen ::
 	TChan (EvReqs (CalcTextExtents :- GuiEv)) -> TChan (EvOccs (CalcTextExtents :- GuiEv)) ->
 	TVar (M.Map Int (A.Point, A.Point)) -> String ->
 	Maybe GithubNameToken -> TChan x -> Sig s FollowboxEv x r -> IO r
 runFollowboxGen cr c va brs mgnt c' s = do
 	(r, _) <- interpretSt (handleFollowbox va (cr, c) brs mgnt) c' s (initialFollowboxState $ mkStdGen 8)
+	pure r
+
+type Area = (Point, Point)
+
+runFollowboxGen' ::
+	TChan (EvReqs (CalcTextExtents :- GuiEv)) -> TChan (EvOccs (CalcTextExtents :- GuiEv)) ->
+	TVar (M.Map Int (A.Point, A.Point)) -> String ->
+	Maybe GithubNameToken -> TChan x ->
+	Sig s FollowboxEv ([(Int, Area)], x) r -> IO r
+runFollowboxGen' cr c va brs mgnt c' s = do
+	(r, _) <- interpretSt' (handleFollowbox va (cr, c) brs mgnt) va c' s (initialFollowboxState $ mkStdGen 8)
 	pure r
 
 handleFollowbox :: TVar (M.Map Int (A.Point, A.Point)) ->
