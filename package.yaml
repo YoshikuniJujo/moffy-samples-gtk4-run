@@ -1,5 +1,5 @@
 name:                moffy-samples-gtk4-run
-version:             0.1.0.0
+version:             0.2.0.0
 github:              "YoshikuniJujo/moffy-samples-gtk4-run"
 license:             BSD-3-Clause
 author:              "Yoshikuni Jujo"
@@ -23,6 +23,7 @@ dependencies:
 - base >= 4.7 && < 5
 - stm
 - text
+- containers
 - time
 - random
 - moffy

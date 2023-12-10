@@ -32,27 +32,32 @@ import Control.Moffy.Samples.Viewable.Image
 import Control.Moffy.Samples.Viewable.Shape
 import Data.OneOfThem
 
+import Data.Map qualified as M
+import Control.Moffy.Samples.Event.Area qualified as A
+
 runFollowbox :: String -> Sig s FollowboxEv T.View () -> IO ()
 runFollowbox brws sig = runFollowbox_ brws Nothing $ viewToView <$%> sig
 
 runFollowbox_ :: String -> Maybe GithubNameToken -> Sig s FollowboxEv View () -> IO ()
 runFollowbox_ brws tkn sig = do
+	va <- atomically $ newTVar M.empty
 	(cer, ceo, cv) <- atomically $
 		(,,) <$> newTChan <*> newTChan <*> newTChan
-	_ <- forkIO $ runFollowboxGen cer ceo brws tkn cv (sig >> emit Stopped)
+	_ <- forkIO $ runFollowboxGen cer ceo va brws tkn cv (sig >> emit Stopped)
 	runSingleWin cer ceo cv
 
 runFollowboxGen ::
-	TChan (EvReqs (CalcTextExtents :- GuiEv)) -> TChan (EvOccs (CalcTextExtents :- GuiEv)) -> String ->
+	TChan (EvReqs (CalcTextExtents :- GuiEv)) -> TChan (EvOccs (CalcTextExtents :- GuiEv)) ->
+	TVar (M.Map Int (A.Point, A.Point)) -> String ->
 	Maybe GithubNameToken -> TChan x -> Sig s FollowboxEv x r -> IO r
-runFollowboxGen cr c brs mgnt c' s = do
-	(r, _) <- interpretSt (handleFollowbox (cr, c) brs mgnt) c' s (initialFollowboxState $ mkStdGen 8)
+runFollowboxGen cr c va brs mgnt c' s = do
+	(r, _) <- interpretSt (handleFollowbox va (cr, c) brs mgnt) c' s (initialFollowboxState $ mkStdGen 8)
 	pure r
 
-handleFollowbox ::
+handleFollowbox :: TVar (M.Map Int (A.Point, A.Point)) ->
 	(TChan (EvReqs (CalcTextExtents :- GuiEv)), TChan (EvOccs (CalcTextExtents :- GuiEv))) -> Browser ->
 	Maybe GithubNameToken -> HandleF IO (CalcTextExtents :- GuiEv :+: FollowboxEv)
-handleFollowbox = handleFollowboxWith (uncurry . handle)
+handleFollowbox va f = handleFollowboxWith (uncurry . handle) f va
 
 viewToView :: T.View -> View
 viewToView (T.View vs) = View $ (view1ToView1 `apply`) <$> vs
