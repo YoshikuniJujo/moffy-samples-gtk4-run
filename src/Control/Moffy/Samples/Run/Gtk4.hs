@@ -190,6 +190,7 @@ drawView1 cr (VLine (rgbRealToFrac -> clr) lw
 	(realToFrac -> l, realToFrac -> u)
 	(realToFrac -> r, realToFrac -> d)) = do
 	cairoSetSourceRgb cr clr
+	cairoSetLineWidth cr $ realToFrac lw
 	cairoMoveTo cr l u
 	cairoLineTo cr r d
 	cairoStroke cr
