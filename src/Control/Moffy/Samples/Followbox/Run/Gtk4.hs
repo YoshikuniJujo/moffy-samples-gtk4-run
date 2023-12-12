@@ -40,7 +40,7 @@ import Control.Moffy.Samples.Event.Area qualified as A
 runFollowbox :: String -> Sig s FollowboxEv T.View () -> IO ()
 runFollowbox brws sig = runFollowbox_ brws Nothing $ viewToView <$%> sig
 
-runFollowbox' :: String -> Sig s FollowboxEv ([(Int, Area)], T.View) () -> IO ()
+runFollowbox' :: String -> Sig s FollowboxEv ([(Int, Maybe Area)], T.View) () -> IO ()
 runFollowbox' brws sig = runFollowbox_' brws Nothing $ (second viewToView) <$%> sig
 
 runFollowbox_ :: String -> Maybe GithubNameToken -> Sig s FollowboxEv View () -> IO ()
@@ -51,7 +51,7 @@ runFollowbox_ brws tkn sig = do
 	_ <- forkIO $ runFollowboxGen cer ceo va brws tkn cv (sig >> emit Stopped)
 	runSingleWin cer ceo cv
 
-runFollowbox_' :: String -> Maybe GithubNameToken -> Sig s FollowboxEv ([(Int, Area)], View) () -> IO ()
+runFollowbox_' :: String -> Maybe GithubNameToken -> Sig s FollowboxEv ([(Int, Maybe Area)], View) () -> IO ()
 runFollowbox_' brws tkn sig = do
 	va <- atomically $ newTVar M.empty
 	(cer, ceo, cv) <- atomically $
@@ -73,7 +73,7 @@ runFollowboxGen' ::
 	TChan (EvReqs (CalcTextExtents :- GuiEv)) -> TChan (EvOccs (CalcTextExtents :- GuiEv)) ->
 	TVar (M.Map Int (A.Point, A.Point)) -> String ->
 	Maybe GithubNameToken -> TChan x ->
-	Sig s FollowboxEv ([(Int, Area)], x) r -> IO r
+	Sig s FollowboxEv ([(Int, Maybe Area)], x) r -> IO r
 runFollowboxGen' cr c va brs mgnt c' s = do
 	(r, _) <- interpretSt' (handleFollowbox va (cr, c) brs mgnt) va c' s (initialFollowboxState $ mkStdGen 8)
 	pure r
