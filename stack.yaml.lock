@@ -5,12 +5,12 @@
 
 packages:
 - completed:
-    hackage: moffy-samples-events-0.2.2.1@sha256:860876e666fd36dbc40af7e26bd4c187ea61fe3b2415aae50f32b07a0d995465,3178
+    hackage: moffy-samples-events-0.2.2.4@sha256:3bc0799f0c1230bf013f5a9eccc7ebac2387fa4e007f5ccbabe16ad666aeaca2,3206
     pantry-tree:
-      sha256: 7da66bb3118d25362a2f47bc59bb5693b4e6fd558ad444921b1418d8c07811ca
-      size: 2064
+      sha256: fea142bf60fa636231f49fa32bef0518c3477e120c4fa4e1d3fd19753caf1c5f
+      size: 2065
   original:
-    hackage: moffy-samples-events-0.2.2.1
+    hackage: moffy-samples-events-0.2.2.4
 - completed:
     hackage: simple-cairo-0.1.0.5@sha256:d26c1373505430b9ae3d41feae314061d86c231c8b46940f4c4cf36fe54a48b6,4499
     pantry-tree:
