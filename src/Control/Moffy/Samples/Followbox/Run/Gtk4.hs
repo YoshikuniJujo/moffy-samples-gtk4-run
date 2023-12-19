@@ -8,12 +8,16 @@
 module Control.Moffy.Samples.Followbox.Run.Gtk4 (
 	runFollowbox, runFollowbox' ) where
 
+import Prelude hiding (break)
+
 import Control.Arrow
-import Control.Concurrent
+import Control.Monad
 import Control.Moffy
+import Control.Moffy.Samples.Event.Delete
 import Control.Moffy.Samples.Event.CalcTextExtents
 import Control.Moffy.Samples.Handle.TChan
 import Control.Moffy.Samples.Run.TChan
+import Control.Concurrent
 import Control.Concurrent.STM
 import Data.Type.Set ((:-), (:+:), pattern Nil)
 import Data.Type.Flip
@@ -38,7 +42,8 @@ import Data.Map qualified as M
 import Control.Moffy.Samples.Event.Area qualified as A
 
 runFollowbox :: String -> Sig s FollowboxEv T.View () -> IO ()
-runFollowbox brws sig = runFollowbox_ brws Nothing $ viewToView <$%> sig
+runFollowbox brws sig = runFollowbox_ brws Nothing . void
+	$ viewToView <$%> sig `break` deleteEvent `break` checkTerminate
 
 runFollowbox' :: String -> Sig s FollowboxEv ([(Int, Maybe Area)], T.View) () -> IO ()
 runFollowbox' brws sig = runFollowbox_' brws Nothing $ (second viewToView) <$%> sig
